@@ -1,6 +1,7 @@
 import React from 'react';
 import { prisma } from '@/lib/db';
 import CreativityForm from '@/components/CreativityForm';
+import DeleteCreativityButton from '@/components/DeleteCreativityButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,7 @@ export default async function TeacherCreativityPage() {
                   >
                     {/* Image Box */}
                     <div className="aspect-video w-full bg-slate-100 relative overflow-hidden">
+                      <DeleteCreativityButton id={cr.id} />
                       <img
                         src={`/${cr.imagePath}`}
                         alt={cr.title}

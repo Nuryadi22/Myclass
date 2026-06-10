@@ -24,7 +24,7 @@ export default async function ParentDashboardPage() {
     where: { parentId: session.userId },
   });
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
 
   const childrenData = [];
 
@@ -67,11 +67,12 @@ export default async function ParentDashboardPage() {
     });
   }
 
-  const dateStr = new Date().toLocaleDateString('id-ID', {
+  const dateStr = new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  });
+  }).format(new Date());
 
   return (
     <div className="space-y-8 animate-fade-in">

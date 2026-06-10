@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 
 // Helper to generate random string for QR Code Token
@@ -142,21 +142,34 @@ export async function recordAttendanceAction(data: {
         return { success: false, message: 'QR Code Siswa tidak terdaftar.' };
       }
 
-      // Check current time. If past 07:30, mark as late.
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      // Check current time in Asia/Jakarta. If past 07:30, mark as late.
+      const d = new Date();
+      const timeParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).formatToParts(d);
+      const timePartMap = Object.fromEntries(timeParts.map(p => [p.type, p.value]));
+      let hourVal = parseInt(timePartMap.hour, 10);
+      if (hourVal === 24) hourVal = 0;
+      const timeStr = `${hourVal.toString().padStart(2, '0')}:${timePartMap.minute}`;
       status = timeStr > '07:30' ? 'late' : 'present';
     }
 
-    const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const nowTimeStr = new Date().toLocaleTimeString('id-ID', {
+    const todayStr = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date()); // YYYY-MM-DD in WIB
+    
+    const wibParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Jakarta',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false,
-    }).replace(/\./g, ':'); // Formats to HH:MM:SS
+      hour12: false
+    }).formatToParts(new Date());
+    const wibPartMap = Object.fromEntries(wibParts.map(p => [p.type, p.value]));
+    let wibHour = parseInt(wibPartMap.hour, 10);
+    if (wibHour === 24) wibHour = 0;
+    const nowTimeStr = `${wibHour.toString().padStart(2, '0')}:${wibPartMap.minute}:${wibPartMap.second}`;
 
     // Check if already checked in today
     const alreadyChecked = await prisma.attendance.findFirst({
@@ -413,3 +426,68 @@ export async function storePunishmentAction(prevState: any, formData: FormData) 
     return { error: 'Gagal mencatat punishment. Silakan coba lagi.' };
   }
 }
+
+// 6. Delete Creativity record and adjust student points
+export async function destroyCreativityAction(creativityId: number) {
+  const session = await getSession();
+  if (!session || session.role !== 'teacher') {
+    return { error: 'Akses ditolak.' };
+  }
+
+  try {
+    const creativity = await prisma.creativity.findUnique({
+      where: { id: creativityId },
+      include: { student: true }
+    });
+
+    if (!creativity) {
+      return { error: 'Karya kreativitas tidak ditemukan.' };
+    }
+
+    const pointsDeducted = creativity.pointsAwarded;
+    const newPoints = Math.max(0, creativity.student.totalPoints - pointsDeducted);
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete creativity record
+      await tx.creativity.delete({
+        where: { id: creativityId }
+      });
+
+      // 2. Decrement student totalPoints
+      await tx.student.update({
+        where: { id: creativity.studentId },
+        data: { totalPoints: newPoints }
+      });
+
+      // 3. Delete corresponding activity log
+      await tx.activity.deleteMany({
+        where: {
+          studentId: creativity.studentId,
+          type: 'creativity',
+          title: `Mengunggah Karya Kreativitas: ${creativity.title}`,
+          pointsImpact: pointsDeducted
+        }
+      });
+    });
+
+    // Try to delete image file from disk
+    try {
+      const filePath = join(process.cwd(), 'public', creativity.imagePath);
+      await unlink(filePath);
+    } catch (err) {
+      console.warn('Could not delete creativity file on disk:', err);
+    }
+
+    revalidatePath('/teacher/creativity');
+    revalidatePath(`/teacher/reports/${creativity.studentId}`);
+    revalidatePath('/teacher/dashboard');
+    revalidatePath('/parent/dashboard');
+    revalidatePath('/parent/reports');
+
+    return { success: true, message: 'Karya kreativitas berhasil dihapus dan poin siswa disesuaikan.' };
+  } catch (error: any) {
+    console.error('Delete creativity error:', error);
+    return { error: 'Gagal menghapus karya kreativitas. Silakan coba lagi.' };
+  }
+}
+

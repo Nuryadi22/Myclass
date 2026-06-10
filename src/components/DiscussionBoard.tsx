@@ -45,14 +45,52 @@ export default function DiscussionBoard({ initialDiscussions, currentUser }: Dis
   const chatEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [discussions, setDiscussions] = useState<Discussion[]>(initialDiscussions);
+  const prevDiscussionsLength = useRef(initialDiscussions.length);
+
   // Auto scroll to bottom
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const fetchDiscussions = async () => {
+    try {
+      const res = await fetch('/api/discussions');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setDiscussions(data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching discussions:', err);
+    }
+  };
+
+  // Sync state if initialDiscussions changes from server
+  useEffect(() => {
+    setDiscussions(initialDiscussions);
+    prevDiscussionsLength.current = initialDiscussions.length;
+  }, [initialDiscussions]);
+
+  // Scroll to bottom on mount
   useEffect(() => {
     scrollToBottom();
-  }, [initialDiscussions]);
+  }, []);
+
+  // Scroll to bottom when new messages arrive (size grew)
+  useEffect(() => {
+    if (discussions.length > prevDiscussionsLength.current) {
+      scrollToBottom();
+    }
+    prevDiscussionsLength.current = discussions.length;
+  }, [discussions]);
+
+  // Poll discussions every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchDiscussions, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleReplyClick = (disc: Discussion) => {
     setReplyTo(disc);
@@ -82,6 +120,7 @@ export default function DiscussionBoard({ initialDiscussions, currentUser }: Dis
         setMessageText('');
         setReplyTo(null);
         if (formRef.current) formRef.current.reset();
+        await fetchDiscussions();
       }
     });
   };
@@ -98,7 +137,7 @@ export default function DiscussionBoard({ initialDiscussions, currentUser }: Dis
 
       {/* Message List */}
       <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-slate-50/10">
-        {initialDiscussions.length === 0 ? (
+        {discussions.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-2xl bg-slate-150 flex items-center justify-center text-3xl mb-4 shadow-inner">
               💬
@@ -109,7 +148,7 @@ export default function DiscussionBoard({ initialDiscussions, currentUser }: Dis
             </p>
           </div>
         ) : (
-          initialDiscussions.map((disc) => {
+          discussions.map((disc) => {
             const isMe = disc.userId === currentUser.userId;
             const isTeacher = disc.user.role === 'teacher';
 

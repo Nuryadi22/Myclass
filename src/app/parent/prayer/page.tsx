@@ -17,7 +17,7 @@ export default async function ParentPrayerPage() {
     where: { parentId: session.userId },
   });
 
-  const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const todayStr = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date()); // YYYY-MM-DD in WIB
   const prayersData = [];
 
   for (const child of children) {
