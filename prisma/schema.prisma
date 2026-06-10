@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 Int          @id @default(autoincrement())
+  name               String
+  username           String       @unique
+  email              String?      @unique
+  emailVerifiedAt    DateTime?
+  password           String
+  role               String       @default("parent") // "admin", "teacher", "parent"
+  className          String?      // Class assigned to teacher
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  // Relations
+  students           Student[]    @relation("ParentStudents")
+  scannedAttendances Attendance[] @relation("ScannedBy")
+  loggedActivities   Activity[]   @relation("LoggedBy")
+  loggedCreativities Creativity[] @relation("TeacherCreativities")
+  loggedPrayers      Prayer[]     @relation("ParentPrayers")
+  discussions        Discussion[]
+}
+
+model Student {
+  id            Int          @id @default(autoincrement())
+  parentId      Int?
+  parent        User?        @relation("ParentStudents", fields: [parentId], references: [id], onDelete: SetNull)
+  name          String
+  studentId     String       @unique // NISN
+  className     String
+  qrCodeToken   String       @unique
+  totalPoints   Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  attendances   Attendance[]
+  activities    Activity[]
+  creativities  Creativity[]
+  prayers       Prayer[]
+}
+
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date        String   // YYYY-MM-DD
+  time        String   // HH:MM:SS
+  status      String   @default("present") // "present", "late", "sick", "excused", "absent"
+  scannedById Int?
+  scannedBy   User?    @relation("ScannedBy", fields: [scannedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Activity {
+  id           Int      @id @default(autoincrement())
+  studentId    Int
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId    Int?
+  teacher      User?    @relation("LoggedBy", fields: [teacherId], references: [id], onDelete: SetNull)
+  type         String   // "memorization", "literacy", "numeracy", "punishment", "prayer", "creativity"
+  title        String
+  rating       Int?     // 1-5 stars
+  pointsImpact Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Creativity {
+  id            Int      @id @default(autoincrement())
+  studentId     Int
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId     Int?
+  teacher       User?    @relation("TeacherCreativities", fields: [teacherId], references: [id], onDelete: SetNull)
+  title         String
+  imagePath     String
+  description   String?
+  pointsAwarded Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Prayer {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentId  Int
+  parent    User     @relation("ParentPrayers", fields: [parentId], references: [id], onDelete: Cascade)
+  date      String   // YYYY-MM-DD
+  subuh     Boolean  @default(false)
+  dzuhur    Boolean  @default(false)
+  ashar     Boolean  @default(false)
+  maghrib   Boolean  @default(false)
+  isya      Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Discussion {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message    String
+  replyToId  Int?
+  replyTo    Discussion?  @relation("DiscussionReplies", fields: [replyToId], references: [id], onDelete: Cascade)
+  replies    Discussion[] @relation("DiscussionReplies")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
