@@ -45,9 +45,11 @@ export default function LoginPage() {
 
         <div className="relative z-10 space-y-8 my-auto max-w-lg">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white text-indigo-900 flex items-center justify-center font-extrabold text-xl shadow-md select-none">
-              MC
-            </div>
+            <img
+              src="/logo-myclass.png"
+              alt="MyClass Logo"
+              className="w-12 h-12 object-contain select-none rounded-xl"
+            />
             <span className="text-2xl font-extrabold tracking-tight">MyClass</span>
           </div>
 
@@ -102,9 +104,11 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8 z-10">
           {/* Mobile top header (hidden on desktop screens) */}
           <div className="md:hidden flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center font-extrabold text-white text-2xl shadow-lg shadow-indigo-100">
-              MC
-            </div>
+            <img
+              src="/logo-myclass.png"
+              alt="MyClass Logo"
+              className="w-16 h-16 object-contain rounded-2xl"
+            />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
               Selamat Datang di <span className="text-indigo-600">MyClass</span>
             </h2>

@@ -3,6 +3,8 @@
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 
 export async function storePrayerAction(prevState: any, formData: FormData) {
   const session = await getSession();
@@ -135,5 +137,69 @@ export async function storePrayerAction(prevState: any, formData: FormData) {
   } catch (error: any) {
     console.error('Store prayer error:', error);
     return { error: 'Gagal mencatat kegiatan shalat. Silakan coba lagi.' };
+  }
+}
+
+export async function storeAttendanceRequestAction(prevState: any, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== 'parent') {
+    return { error: 'Akses ditolak.' };
+  }
+
+  const studentIdStr = formData.get('student_id') as string;
+  const studentId = parseInt(studentIdStr, 10);
+  const status = formData.get('status') as string; // 'sick' or 'excused'
+  const reason = formData.get('reason') as string;
+  const date = formData.get('date') as string; // YYYY-MM-DD
+  const imageFile = formData.get('photo') as File | null;
+
+  if (!studentId || !status || !date) {
+    return { error: 'Siswa, Status, dan Tanggal wajib diisi.' };
+  }
+
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId }
+    });
+
+    if (!student || student.parentId !== session.userId) {
+      return { error: 'Siswa tidak ditemukan atau data tidak valid.' };
+    }
+
+    let photoPath: string | null = null;
+
+    if (imageFile && imageFile.size > 0) {
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const filename = `${Date.now()}_${imageFile.name.replace(/\s+/g, '_')}`;
+      const uploadDir = join(process.cwd(), 'public', 'uploads', 'attendance');
+      await mkdir(uploadDir, { recursive: true });
+
+      const filePath = join(uploadDir, filename);
+      await writeFile(filePath, buffer);
+
+      photoPath = `uploads/attendance/${filename}`;
+    }
+
+    await prisma.parentAttendanceRequest.create({
+      data: {
+        studentId,
+        parentId: session.userId,
+        date,
+        status,
+        reason: reason ? reason.trim() : null,
+        photoPath,
+        statusApproval: 'pending'
+      }
+    });
+
+    revalidatePath('/parent/dashboard');
+    revalidatePath('/teacher/dashboard');
+
+    return { success: true, message: 'Pengajuan absensi (izin/sakit) berhasil dikirim. Menunggu persetujuan guru kelas.' };
+  } catch (error: any) {
+    console.error('Store attendance request error:', error);
+    return { error: 'Gagal mengirim pengajuan. Silakan coba lagi.' };
   }
 }

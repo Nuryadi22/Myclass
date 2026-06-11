@@ -35,6 +35,7 @@ export async function loginAction(prevState: any, formData: FormData) {
       username: user.username,
       role: user.role,
       className: user.className,
+      appTitle: user.appTitle,
     });
 
     // Set cookie

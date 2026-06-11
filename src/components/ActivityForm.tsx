@@ -44,7 +44,7 @@ export default function ActivityForm({ students }: ActivityFormProps) {
     <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-xs">
       <div>
         <h3 className="font-extrabold text-slate-855 text-base flex items-center gap-2">
-          <Plus className="w-5 h-5 text-indigo-650" />
+          <Plus className="w-5 h-5 text-indigo-600" />
           <span>Input Aktivitas Keaktifan</span>
         </h3>
         <p className="text-xs text-slate-400 font-semibold mt-1">

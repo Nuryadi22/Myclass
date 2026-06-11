@@ -100,7 +100,7 @@ export default function CreativityForm({ students }: CreativityFormProps) {
                   type="checkbox"
                   checked={selectedStudentIds.includes(student.id)}
                   onChange={() => handleStudentCheck(student.id)}
-                  className="h-4 w-4 text-indigo-650 focus:ring-indigo-500 border-slate-300 rounded-lg cursor-pointer"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded-lg cursor-pointer"
                 />
                 <span>{student.name}</span>
               </label>

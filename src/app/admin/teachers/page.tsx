@@ -1,6 +1,7 @@
 import React from 'react';
 import { prisma } from '@/lib/db';
 import TeacherForm from '@/components/TeacherForm';
+import DeleteTeacherButton from '@/components/DeleteTeacherButton';
 import { ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -40,13 +41,15 @@ export default async function AdminTeachersPage() {
                   <th className="py-3 px-3">Nama Lengkap</th>
                   <th className="py-3 px-3">No Induk Guru (NIG)</th>
                   <th className="py-3 px-3">Kelas Binaan</th>
+                  <th className="py-3 px-3">Judul Aplikasi</th>
                   <th className="py-3 px-3 text-center">Status</th>
+                  <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="font-semibold text-slate-755">
                 {teachers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-400 font-semibold">
+                    <td colSpan={7} className="py-12 text-center text-slate-400 font-semibold">
                       Belum ada data guru kelas terdaftar.
                     </td>
                   </tr>
@@ -61,11 +64,21 @@ export default async function AdminTeachersPage() {
                           {teacher.className || 'Tanpa Kelas'}
                         </span>
                       </td>
+                      <td className="py-3.5 px-3 text-xs text-slate-600">
+                        {teacher.appTitle ? (
+                          <span className="font-bold text-slate-800 lowercase">by {teacher.appTitle}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">Default</span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-3 text-center">
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">
                           <ShieldCheck className="w-3 h-3" />
                           Guru Aktif
                         </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-center flex justify-center">
+                        <DeleteTeacherButton id={teacher.id} name={teacher.name} />
                       </td>
                     </tr>
                   ))

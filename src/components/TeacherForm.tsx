@@ -103,6 +103,19 @@ export default function TeacherForm() {
           />
         </div>
 
+        <div>
+          <label htmlFor="app_title" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+            Judul Aplikasi (by Judul Aplikasi)
+          </label>
+          <input
+            id="app_title"
+            name="app_title"
+            type="text"
+            className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-slate-800 focus:bg-white text-xs font-semibold transition-all"
+            placeholder="Contoh: SD IT Al-Iman (Opsional)"
+          />
+        </div>
+
         <button
           type="submit"
           disabled={isPending}

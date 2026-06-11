@@ -13,3 +13,23 @@ body {
   background-color: var(--background);
   color: var(--foreground);
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area, #print-area *,
+  #print-area-parent, #print-area-parent * {
+    visibility: visible;
+  }
+  #print-area, #print-area-parent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+

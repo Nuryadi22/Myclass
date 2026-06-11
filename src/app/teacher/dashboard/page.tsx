@@ -2,25 +2,66 @@ import React from 'react';
 import { prisma } from '@/lib/db';
 import { Users, ClipboardCheck, Star, Clock, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { getSession } from '@/lib/auth';
+import PendingRequestsModal from '@/components/PendingRequestsModal';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TeacherDashboardPage() {
+  const session = await getSession();
+  if (!session) return null;
+
   const todayStr = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
 
+  const classFilter = session.className ? { className: session.className } : {};
+
   // Fetch counts
-  const totalStudents = await prisma.student.count();
+  const totalStudents = await prisma.student.count({
+    where: classFilter,
+  });
   const todayAttendance = await prisma.attendance.count({
-    where: { date: todayStr },
+    where: {
+      date: todayStr,
+      student: classFilter,
+    },
   });
   
   const totalPointsAggregate = await prisma.student.aggregate({
+    where: classFilter,
     _sum: { totalPoints: true },
   });
   const totalPoints = totalPointsAggregate._sum.totalPoints || 0;
 
+  // Fetch pending parent attendance requests
+  const pendingRequests = await prisma.parentAttendanceRequest.findMany({
+    where: {
+      student: {
+        className: session.className || 'default-none-class',
+      },
+      statusApproval: 'pending',
+    },
+    include: {
+      student: {
+        select: {
+          name: true,
+          studentId: true,
+          className: true,
+        },
+      },
+      parent: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
   // Recent 5 activities
   const recentActivities = await prisma.activity.findMany({
+    where: {
+      student: classFilter,
+    },
     include: {
       student: {
         select: { name: true },
@@ -32,6 +73,9 @@ export default async function TeacherDashboardPage() {
 
   // Recent 5 creativities
   const recentCreativities = await prisma.creativity.findMany({
+    where: {
+      student: classFilter,
+    },
     include: {
       student: {
         select: { name: true },
@@ -60,7 +104,7 @@ export default async function TeacherDashboardPage() {
             <h3 className="text-3xl font-extrabold text-slate-850">{totalStudents}</h3>
             <span className="text-[10px] text-indigo-600 font-bold block">Siswa Aktif Terdaftar</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-650 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
@@ -70,9 +114,9 @@ export default async function TeacherDashboardPage() {
           <div className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Absensi Hari Ini</span>
             <h3 className="text-3xl font-extrabold text-slate-850">{todayAttendance}</h3>
-            <span className="text-[10px] text-indigo-650 font-bold block">Siswa Sudah Diabsen</span>
+            <span className="text-[10px] text-indigo-600 font-bold block">Siswa Sudah Diabsen</span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-650 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
             <ClipboardCheck className="w-6 h-6" />
           </div>
         </div>
@@ -157,6 +201,9 @@ export default async function TeacherDashboardPage() {
           </div>
         </div>
       </div>
+      {pendingRequests.length > 0 && (
+        <PendingRequestsModal requests={pendingRequests} />
+      )}
     </div>
   );
 }

@@ -17,7 +17,9 @@ import {
   LogOut,
   Menu,
   X,
-  Activity
+  Activity,
+  Coins,
+  Calendar
 } from 'lucide-react';
 
 interface UserSession {
@@ -26,14 +28,16 @@ interface UserSession {
   username: string;
   role: string;
   className?: string | null;
+  appTitle?: string | null;
 }
 
 interface DashboardLayoutProps {
   user: UserSession;
   children: React.ReactNode;
+  childName?: string;
 }
 
-export default function DashboardLayout({ user, children }: DashboardLayoutProps) {
+export default function DashboardLayout({ user, children, childName }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -118,6 +122,11 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
           matchPrefix: '/teacher/reports',
         },
         {
+          name: 'Kas Kelas',
+          href: '/teacher/cash',
+          icon: Coins,
+        },
+        {
           name: 'Forum Diskusi',
           href: '/discussions',
           icon: MessageSquare,
@@ -133,9 +142,19 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
         icon: LayoutDashboard,
       },
       {
+        name: 'Absensi',
+        href: '/parent/attendance',
+        icon: Calendar,
+      },
+      {
         name: 'Monitoring Shalat',
         href: '/parent/prayer',
         icon: ClipboardCheck,
+      },
+      {
+        name: 'Laporan Kas',
+        href: '/parent/cash',
+        icon: Coins,
       },
       {
         name: 'Rekap Laporan Anak',
@@ -182,7 +201,7 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
   return (
     <div className="h-full flex flex-col overflow-hidden text-slate-800">
       {/* Top Header */}
-      <header className="flex-none bg-white border-b border-slate-100 h-16 flex items-center justify-between px-6 z-20 shadow-xs">
+      <header className="flex-none bg-white border-b border-slate-100 h-16 flex items-center justify-between px-6 z-20 shadow-xs print:hidden">
         <div className="flex items-center gap-3">
           {/* Mobile Sidebar Toggle */}
           <button
@@ -194,16 +213,24 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
 
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-md ${themeBg}`}>
-              MC
-            </div>
+            <img
+              src="/logo-myclass.png"
+              alt="MyClass Logo"
+              className="w-9 h-9 object-contain rounded-lg"
+            />
             <div>
               <h1 className={`text-lg font-bold tracking-tight ${textColor}`}>
                 MyClass
               </h1>
-              <p className="text-[10px] text-slate-400 font-bold -mt-1 uppercase tracking-wider">
-                {roleLabel}
-              </p>
+              {user.role === 'teacher' && user.appTitle ? (
+                <p className="text-[10px] text-slate-400 font-bold -mt-1 lowercase tracking-wider">
+                  by {user.appTitle}
+                </p>
+              ) : (
+                <p className="text-[10px] text-slate-400 font-bold -mt-1 uppercase tracking-wider">
+                  {roleLabel}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -214,7 +241,13 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-slate-700 leading-tight">{user.name}</p>
               <p className="text-xs text-slate-400 font-semibold capitalize">
-                {user.role === 'admin' ? 'Super Admin' : user.role === 'teacher' ? `Guru ${user.className || 'Kelas'}` : 'Orang Tua'}
+                {user.role === 'admin'
+                  ? 'Super Admin'
+                  : user.role === 'teacher'
+                  ? `Guru ${user.className || 'Kelas'}`
+                  : childName
+                  ? `Wali dari ${childName}`
+                  : 'Orang Tua'}
               </p>
             </div>
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
@@ -240,7 +273,7 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
       {/* App Shell Container */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar (Desktop) */}
-        <aside className="w-64 bg-white border-r border-slate-100 flex-none hidden md:flex flex-col justify-between p-4 overflow-y-auto">
+        <aside className="w-64 bg-white border-r border-slate-100 flex-none hidden md:flex flex-col justify-between p-4 overflow-y-auto print:hidden">
           <nav className="space-y-1">{renderNavLinks()}</nav>
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
@@ -250,7 +283,7 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
 
         {/* Sidebar Drawer (Mobile) */}
         {mobileSidebarOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 z-50 md:hidden print:hidden">
             {/* Backdrop */}
             <div
               onClick={() => setMobileSidebarOpen(false)}
@@ -278,7 +311,7 @@ export default function DashboardLayout({ user, children }: DashboardLayoutProps
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto bg-slate-50/50 p-4 md:p-8 print:p-0 print:bg-white">
           {children}
         </main>
       </div>

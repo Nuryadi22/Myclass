@@ -110,7 +110,7 @@ export default async function TeacherStudentReportDetailPage({ params }: PagePro
         <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-xs">
           <div>
             <h4 className="font-extrabold text-slate-855 text-base flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-indigo-650" />
+              <Calendar className="w-5 h-5 text-indigo-600" />
               <span>Log Riwayat Kehadiran</span>
             </h4>
             <p className="text-xs text-slate-400 font-semibold mt-1">Kehadiran harian yang dicatat oleh guru.</p>
@@ -145,7 +145,7 @@ export default async function TeacherStudentReportDetailPage({ params }: PagePro
                         : att.status === 'sick'
                         ? 'bg-blue-50 text-blue-700'
                         : att.status === 'excused'
-                        ? 'bg-indigo-50 text-indigo-750'
+                        ? 'bg-indigo-50 text-indigo-700'
                         : 'bg-red-50 text-red-700'
                     }`}>
                       {att.status === 'present' ? 'Hadir' : att.status === 'late' ? 'Terlambat' : att.status === 'sick' ? 'Sakit' : att.status === 'excused' ? 'Izin' : 'Alfa'}
@@ -161,7 +161,7 @@ export default async function TeacherStudentReportDetailPage({ params }: PagePro
         <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-xs">
           <div>
             <h4 className="font-extrabold text-slate-855 text-base flex items-center gap-2">
-              <Award className="w-5 h-5 text-indigo-650" />
+              <Award className="w-5 h-5 text-indigo-600" />
               <span>Log Keaktifan & Punishment</span>
             </h4>
             <p className="text-xs text-slate-400 font-semibold mt-1">Penghargaan poin keaktifan atau pemotongan pelanggaran.</p>
@@ -208,7 +208,7 @@ export default async function TeacherStudentReportDetailPage({ params }: PagePro
         <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-xs">
           <div>
             <h4 className="font-extrabold text-slate-855 text-base flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-indigo-650" />
+              <ImageIcon className="w-5 h-5 text-indigo-600" />
               <span>Portofolio Kreativitas</span>
             </h4>
             <p className="text-xs text-slate-400 font-semibold mt-1">Karya seni dan kerajinan tangan yang diunggah.</p>
@@ -239,7 +239,7 @@ export default async function TeacherStudentReportDetailPage({ params }: PagePro
         <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-xs">
           <div>
             <h4 className="font-extrabold text-slate-855 text-base flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-indigo-650" />
+              <ClipboardList className="w-5 h-5 text-indigo-600" />
               <span>Monitoring Shalat Mandiri (Rumah)</span>
             </h4>
             <p className="text-xs text-slate-400 font-semibold mt-1">Ceklis ibadah harian yang dilaporkan orang tua.</p>

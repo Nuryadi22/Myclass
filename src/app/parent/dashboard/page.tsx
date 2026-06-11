@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { Calendar, User, Star, ClipboardCheck } from 'lucide-react';
 import ChildProgressChart from '@/components/ChildProgressChart';
+import ClassCashPieChart from '@/components/ClassCashPieChart';
 import AttendanceNotificationModal from '@/components/AttendanceNotificationModal';
 
 export const dynamic = 'force-dynamic';
@@ -57,11 +58,28 @@ export default async function ParentDashboardPage() {
     // 5. Weekly Progression (last 4 weeks)
     const weeklyProgression = await getWeeklyProgression(child.id);
 
+    // 6. Fetch class cash transactions to calculate totals
+    const classCashTransactions = child.className
+      ? await prisma.classCash.findMany({
+          where: { className: child.className },
+        })
+      : [];
+
+    const totalIncome = classCashTransactions
+      .filter((t) => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalExpense = classCashTransactions
+      .filter((t) => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0);
+
     childrenData.push({
       student: child,
       today_attendance: todayAttendance,
       recent_activities: recentActivities,
       recent_creativities: recentCreativities,
+      totalIncome,
+      totalExpense,
       ...dailyProgression,
       ...weeklyProgression,
     });
@@ -91,7 +109,7 @@ export default async function ParentDashboardPage() {
       </div>
 
       {/* Children Overview Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={`grid grid-cols-1 ${childrenData.length > 1 ? 'lg:grid-cols-2' : ''} gap-8`}>
         {childrenData.length === 0 ? (
           <div className="bg-white p-12 rounded-3xl border border-slate-100 shadow-xs text-center text-slate-400 font-bold col-span-2">
             Akun Anda belum ditautkan dengan siswa manapun. Silakan hubungi Guru Kelas untuk menautkan akun Anda.
@@ -120,7 +138,7 @@ export default async function ParentDashboardPage() {
                 statusIcon = '⏰';
               } else if (att.status === 'sick') {
                 statusBg = 'bg-blue-50 border-blue-100/50 text-blue-800';
-                statusText = 'Sakit (Izin)';
+                statusText = 'Sakit';
                 statusTimeStr = `Jam: ${att.time.substring(0, 5)} WIB`;
                 statusIcon = '🤒';
               } else if (att.status === 'excused') {
@@ -187,14 +205,24 @@ export default async function ParentDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Chart Progress Component */}
-                  <ChildProgressChart
-                    studentId={student.id}
-                    dailyLabels={data.dailyLabels}
-                    dailyPoints={data.dailyPoints}
-                    weeklyLabels={data.weeklyLabels}
-                    weeklyPoints={data.weeklyPoints}
-                  />
+                  {/* Charts Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Chart Progress Component */}
+                    <ChildProgressChart
+                      studentId={student.id}
+                      dailyLabels={data.dailyLabels}
+                      dailyPoints={data.dailyPoints}
+                      weeklyLabels={data.weeklyLabels}
+                      weeklyPoints={data.weeklyPoints}
+                    />
+
+                    {/* Class Cash Pie Chart */}
+                    <ClassCashPieChart
+                      className={student.className || ''}
+                      totalIncome={data.totalIncome}
+                      totalExpense={data.totalExpense}
+                    />
+                  </div>
 
                   {/* Recent Activity List */}
                   <div className="space-y-3">

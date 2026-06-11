@@ -16,18 +16,20 @@ model User {
   email              String?      @unique
   emailVerifiedAt    DateTime?
   password           String
-  role               String       @default("parent") // "admin", "teacher", "parent"
-  className          String?      // Class assigned to teacher
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  role                     String                    @default("parent") // "admin", "teacher", "parent"
+  className                String?                   // Class assigned to teacher
+  appTitle                 String?                   // Custom title for teacher
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
 
   // Relations
-  students           Student[]    @relation("ParentStudents")
-  scannedAttendances Attendance[] @relation("ScannedBy")
-  loggedActivities   Activity[]   @relation("LoggedBy")
-  loggedCreativities Creativity[] @relation("TeacherCreativities")
-  loggedPrayers      Prayer[]     @relation("ParentPrayers")
-  discussions        Discussion[]
+  students                 Student[]                 @relation("ParentStudents")
+  scannedAttendances       Attendance[]              @relation("ScannedBy")
+  loggedActivities         Activity[]                @relation("LoggedBy")
+  loggedCreativities       Creativity[]              @relation("TeacherCreativities")
+  loggedPrayers            Prayer[]                  @relation("ParentPrayers")
+  discussions              Discussion[]
+  parentAttendanceRequests ParentAttendanceRequest[] @relation("ParentAttendanceRequests")
 }
 
 model Student {
@@ -43,10 +45,12 @@ model Student {
   updatedAt     DateTime     @updatedAt
 
   // Relations
-  attendances   Attendance[]
-  activities    Activity[]
-  creativities  Creativity[]
-  prayers       Prayer[]
+  attendances              Attendance[]
+  activities               Activity[]
+  creativities             Creativity[]
+  prayers                  Prayer[]
+  parentAttendanceRequests ParentAttendanceRequest[]
+  classCash                ClassCash[]
 }
 
 model Attendance {
@@ -117,4 +121,32 @@ model Discussion {
   replies    Discussion[] @relation("DiscussionReplies")
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
+}
+
+model ParentAttendanceRequest {
+  id             Int      @id @default(autoincrement())
+  studentId      Int
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentId       Int
+  parent         User     @relation("ParentAttendanceRequests", fields: [parentId], references: [id], onDelete: Cascade)
+  date           String   // YYYY-MM-DD
+  status         String   // "sick", "excused"
+  reason         String?
+  photoPath      String?
+  statusApproval String   @default("pending") // "pending", "approved", "rejected"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ClassCash {
+  id          Int      @id @default(autoincrement())
+  className   String
+  type        String   // "income", "expense"
+  studentId   Int?
+  student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  description String
+  amount      Float
+  date        String   // YYYY-MM-DD
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

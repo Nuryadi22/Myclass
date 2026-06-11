@@ -20,6 +20,7 @@ export async function signJWT(payload: {
   username: string;
   role: string;
   className?: string | null;
+  appTitle?: string | null;
 }) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -37,6 +38,7 @@ export async function verifyJWT(token: string) {
       username: string;
       role: string;
       className?: string | null;
+      appTitle?: string | null;
     };
   } catch (e) {
     return null;

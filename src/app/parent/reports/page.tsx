@@ -241,7 +241,7 @@ export default async function ParentReportsPage() {
                                   : att.status === 'sick'
                                   ? 'bg-blue-50 text-blue-700'
                                   : att.status === 'excused'
-                                  ? 'bg-indigo-50 text-indigo-750'
+                                  ? 'bg-indigo-50 text-indigo-700'
                                   : 'bg-red-50 text-red-700'
                               }`}>
                                 {att.status === 'present' ? 'Hadir' : att.status === 'late' ? 'Terlambat' : att.status === 'sick' ? 'Sakit' : att.status === 'excused' ? 'Izin' : 'Alfa'}

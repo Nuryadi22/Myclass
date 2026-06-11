@@ -491,3 +491,171 @@ export async function destroyCreativityAction(creativityId: number) {
   }
 }
 
+export async function approveOrRejectAttendanceAction(requestId: number, statusApproval: string) {
+  const session = await getSession();
+  if (!session || session.role !== 'teacher') {
+    return { error: 'Akses ditolak.' };
+  }
+
+  try {
+    const request = await prisma.parentAttendanceRequest.findUnique({
+      where: { id: requestId },
+      include: { student: true }
+    });
+
+    if (!request) {
+      return { error: 'Pengajuan absensi tidak ditemukan.' };
+    }
+
+    if (request.student.className !== session.className) {
+      return { error: 'Akses ditolak. Siswa ini bukan kelas Anda.' };
+    }
+
+    if (statusApproval === 'approved') {
+      const now = new Date();
+      const timeStr = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(now);
+
+      await prisma.$transaction(async (tx) => {
+        // 1. Update request status
+        await tx.parentAttendanceRequest.update({
+          where: { id: requestId },
+          data: { statusApproval: 'approved' }
+        });
+
+        // 2. Upsert Attendance
+        const existingAttendance = await tx.attendance.findFirst({
+          where: {
+            studentId: request.studentId,
+            date: request.date
+          }
+        });
+
+        if (existingAttendance) {
+          await tx.attendance.update({
+            where: { id: existingAttendance.id },
+            data: {
+              status: request.status,
+              time: timeStr,
+              scannedById: session.userId
+            }
+          });
+        } else {
+          await tx.attendance.create({
+            data: {
+              studentId: request.studentId,
+              date: request.date,
+              time: timeStr,
+              status: request.status,
+              scannedById: session.userId
+            }
+          });
+        }
+      });
+    } else {
+      await prisma.parentAttendanceRequest.update({
+        where: { id: requestId },
+        data: { statusApproval: 'rejected' }
+      });
+    }
+
+    revalidatePath('/teacher/dashboard');
+    revalidatePath('/parent/dashboard');
+    revalidatePath('/parent/reports');
+    revalidatePath(`/teacher/reports/${request.studentId}`);
+
+    return { success: true, message: `Pengajuan absensi berhasil di-${statusApproval === 'approved' ? 'setujui' : 'tolak'}.` };
+  } catch (error: any) {
+    console.error('Approve/Reject attendance request error:', error);
+    return { error: 'Gagal memproses pengajuan. Silakan coba lagi.' };
+  }
+}
+
+export async function storeCashTransactionAction(prevState: any, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== 'teacher') {
+    return { error: 'Akses ditolak.' };
+  }
+
+  const className = session.className;
+  if (!className) {
+    return { error: 'Anda belum terdaftar di kelas manapun.' };
+  }
+
+  const type = formData.get('type') as string; // 'income' or 'expense'
+  const amountStr = formData.get('amount') as string;
+  const amount = parseFloat(amountStr);
+  const date = formData.get('date') as string; // YYYY-MM-DD
+  const description = formData.get('description') as string;
+  const studentIdStr = formData.get('student_id') as string | null;
+
+  if (!type || isNaN(amount) || amount <= 0 || !date || !description) {
+    return { error: 'Nominal, Tanggal, dan Keterangan wajib diisi dengan benar.' };
+  }
+
+  let studentId: number | null = null;
+  if (type === 'income') {
+    if (!studentIdStr) {
+      return { error: 'Siswa wajib dipilih untuk jenis transaksi pemasukan.' };
+    }
+    if (studentIdStr !== 'other') {
+      studentId = parseInt(studentIdStr, 10);
+    }
+  }
+
+  try {
+    await prisma.classCash.create({
+      data: {
+        className,
+        type,
+        amount,
+        date,
+        description: description.trim(),
+        studentId
+      }
+    });
+
+    revalidatePath('/teacher/cash');
+    return { success: true, message: 'Transaksi kas kelas berhasil dicatat.' };
+  } catch (error: any) {
+    console.error('Store class cash error:', error);
+    return { error: 'Gagal mencatat transaksi kas. Silakan coba lagi.' };
+  }
+}
+
+export async function deleteCashTransactionAction(transactionId: number) {
+  const session = await getSession();
+  if (!session || session.role !== 'teacher') {
+    return { error: 'Akses ditolak.' };
+  }
+
+  try {
+    const transaction = await prisma.classCash.findUnique({
+      where: { id: transactionId }
+    });
+
+    if (!transaction) {
+      return { error: 'Transaksi tidak ditemukan.' };
+    }
+
+    if (transaction.className !== session.className) {
+      return { error: 'Akses ditolak. Transaksi ini bukan milik kelas Anda.' };
+    }
+
+    await prisma.classCash.delete({
+      where: { id: transactionId }
+    });
+
+    revalidatePath('/teacher/cash');
+    return { success: true, message: 'Transaksi kas kelas berhasil dihapus.' };
+  } catch (error: any) {
+    console.error('Delete class cash error:', error);
+    return { error: 'Gagal menghapus transaksi kas. Silakan coba lagi.' };
+  }
+}
+

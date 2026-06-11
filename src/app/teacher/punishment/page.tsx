@@ -65,7 +65,7 @@ export default async function TeacherPunishmentPage() {
                         <span className="font-extrabold text-slate-900 block leading-tight">
                           {pun.student.name}
                         </span>
-                        <span className="text-[10px] text-red-650 font-bold uppercase block leading-none mt-0.5">
+                        <span className="text-[10px] text-red-600 font-bold uppercase block leading-none mt-0.5">
                           Alasan: {pun.title}
                         </span>
                         <span className="text-[9px] text-slate-400 block mt-1 font-semibold">
