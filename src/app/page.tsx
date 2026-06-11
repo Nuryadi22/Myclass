@@ -63,7 +63,7 @@ export default function LoginPage() {
           </div>
 
           {/* Feature list with clean cards */}
-          <div className="space-y-4 pt-4">
+          {/* <div className="space-y-4 pt-4">
             <div className="flex gap-4 items-start bg-indigo-950/40 p-4 rounded-2xl border border-indigo-800/40">
               <div className="text-xl mt-0.5">⏱️</div>
               <div>
@@ -87,11 +87,11 @@ export default function LoginPage() {
                 <p className="text-xs text-indigo-200 mt-0.5">Laporan pembiasaan ibadah mandiri harian di rumah langsung dari wali murid.</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="relative z-10 text-xs text-indigo-300 font-semibold">
-          <p>© {new Date().getFullYear()} MyClass Monitoring System. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} MyClass By NYD Monitoring System. All rights reserved.</p>
         </div>
       </div>
 
@@ -207,8 +207,7 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center text-xs text-slate-400 font-semibold space-y-1">
-            <p>© {new Date().getFullYear()} MyClass Monitoring System.</p>
-            <p>Dukungan Multi-Role (Admin, Guru, Wali Murid).</p>
+            <p>© {new Date().getFullYear()} MyClass By NYD Monitoring System.</p>
           </div>
         </div>
       </div>
